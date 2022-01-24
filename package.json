@@ -16,5 +16,8 @@
   "bugs": {
     "url": "https://github.com/Michaela-K/tinyapp/issues"
   },
-  "homepage": "https://github.com/Michaela-K/tinyapp#readme"
+  "homepage": "https://github.com/Michaela-K/tinyapp#readme",
+  "dependencies": {
+    "express": "^4.17.2"
+  }
 }
