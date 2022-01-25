@@ -54,6 +54,14 @@ app.post("/urls", (req, res) => {
   res.redirect(`/urls/${shortURL}`);                    //?????????
 });
 
+// //A copy OF ABOVE
+// app.post("/urls",bodyParser.urlencoded({ extended: true }), (req, res) => {
+//   const shortURL = generateRandomString();               
+//   urlDatabase[shortURL] = {shortURL: req.body.longURL}; 
+//   res.redirect(`/urls/${shortURL}`);                    
+// });
+
+
 app.get("/hello", (req, res) => {
   res.send("<html><body>Hello <b>World</b></body></html>\n");
 });
