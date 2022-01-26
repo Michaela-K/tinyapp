@@ -1,5 +1,8 @@
+const path = require('path');
 const express = require("express");
+const cookieParser = require('cookie-parser');
 const app = express();
+app.use(cookieParser())
 const PORT = 8000; // default port 8080
 
 const bodyParser = require("body-parser");             //convert the request body from a Buffer into string that we can read
@@ -27,31 +30,44 @@ app.get("/urls.json", (req, res) => {
 });
 
 //to present the form to the user
-app.get("/urls/new", (req, res) => {      
-  res.render("urls_new");
-});
+// app.get("/urls/new", (req, res) => {   
+//   username: req.cookies["username"],   
+//   res.render("urls_new");
+// });
 
 //store new shortURL
-app.get("/urls/:shortURL", (req, res) => {  //The : in front of shortURL indicates that shortURL is a route parameter. This means that the value in this part of the url will be available in the req.params object.
-  // const longURL = urlDatabase[req.params.shortURL]
-  let templateVars = {
-    shortURL: req.params.shortURL,
-    longURL: urlDatabase[req.params.shortURL]
-  };
-  res.render("urls_show", templateVars);
-});
+// app.get("/urls/:shortURL", (req, res) => {  //The : in front of shortURL indicates that shortURL is a route parameter. This means that the value in this part of the url will be available in the req.params object.
+//   // const longURL = urlDatabase[req.params.shortURL]
+//   let templateVars = {
+//     username: req.cookies['username'],
+//     shortURL: req.params.shortURL,
+//     longURL: urlDatabase[req.params.shortURL]
+//   };
+//   res.render("urls_show", templateVars);
+// });
+
 //Create short URL and enter Long URL
 app.post("/urls", (req, res) => {
   const shortURL = generateRandomString();               //?????LINE 6 "url shortening part2"
   urlDatabase[shortURL] = req.body.longURL; // the data in the input field will be avaialbe to us in the req.body.longURL variable, which we can store in our urlDatabase object. // Log the POST request body to the console
   console.log('urlDatabase', urlDatabase)
-  res.redirect(`/urls/${shortURL}`);                    //?????????
+  res.redirect(`/urls`);                    //?????????
 });
 
 app.get("/urls", (req, res) => {
   //JSON string representing the entire urlDatabase object
-  const templateVars = { urls: urlDatabase };
+  const templateVars = { 
+    urls: urlDatabase, 
+    username: req.cookies['username']};
   res.render("urls_index", templateVars);       //pass the URL data to our template
+});
+
+app.get("/url/:id", (req, res) => {             //instruction says urls/:id but if we put it as url it conflict with anothter route above - the one in conflict is urls/:id
+  const templateVars = { 
+    longURL: urlDatabase[req.params.id], 
+    shortURL: req.params.id,
+    username: req.cookies['username']};
+  res.render('urls_show',templateVars);     
 });
 
 //to see new URL
@@ -76,6 +92,29 @@ app.post(`/urls/:shortURL/delete`, (req, res) => {
   const shortURL = req.params.shortURL
   delete urlDatabase[shortURL];
   res.redirect('/urls');                    
+});
+
+app.get("/urls/new", (req, res) => {
+  const templateVars = { 
+    urls: urlDatabase, 
+    username: req.cookies["username"]};
+  res.render("urls_new", templateVars);
+}); 
+
+//to login POST
+app.post('/login', (req, res) => {
+  let username = req.body.username;  //use setCookie here instead?
+  res.cookie('username', `${username}`);   //res.cookie - To set the values on the cookie. each res.cookie can only set one cookie
+  res.redirect('/urls'); 
+});
+
+//logout
+app.post('/logout', (req, res) => {
+  let username = req.body.username;
+  console.log(username);
+  console.log(`${username}`);
+  res.clearCookie('username');
+  res.redirect('/urls'); 
 });
 
 
