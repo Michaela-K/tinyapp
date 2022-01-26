@@ -21,26 +21,26 @@ app.get("/", (req, res) => {
 });
 
 
-
+//JSON string representing the entire urlDatabase object
 app.get("/urls.json", (req, res) => {
-  //JSON string representing the entire urlDatabase object
   res.json(urlDatabase);
 });
 
-app.get("/urls/new", (req, res) => {      //to present the form to the user
+//to present the form to the user
+app.get("/urls/new", (req, res) => {      
   res.render("urls_new");
 });
 
+//store new shortURL
 app.get("/urls/:shortURL", (req, res) => {  //The : in front of shortURL indicates that shortURL is a route parameter. This means that the value in this part of the url will be available in the req.params object.
   // const longURL = urlDatabase[req.params.shortURL]
-  // const shortURL = req.params.shortURL
-  // const templateVars = {
-  //   shortURL: req.params.shortURL,
-  //   longURL: longURL
-  // };
-  res.redirect('/urls');
+  let templateVars = {
+    shortURL: req.params.shortURL,
+    longURL: urlDatabase[req.params.shortURL]
+  };
+  res.render("urls_show", templateVars);
 });
-
+//Create short URL and enter Long URL
 app.post("/urls", (req, res) => {
   const shortURL = generateRandomString();               //?????LINE 6 "url shortening part2"
   urlDatabase[shortURL] = req.body.longURL; // the data in the input field will be avaialbe to us in the req.body.longURL variable, which we can store in our urlDatabase object. // Log the POST request body to the console
@@ -53,18 +53,25 @@ app.get("/urls", (req, res) => {
   const templateVars = { urls: urlDatabase };
   res.render("urls_index", templateVars);       //pass the URL data to our template
 });
-                                        //why doesnt my curl work??
+
+//to see new URL
 app.get("/u/:shortURL", (req, res) => {               //?????is this ok if we have the one above?
   const longURL = urlDatabase[req.params.shortURL];   //redirect short URL section of "url shortening part2"
   res.redirect(longURL);     
 });
 
+//to update
 app.post(`/urls/:shortURL/update`, (req, res) => {
-  // const shortURL = req.body.shortURL;
-  urlDatabase[shortURL] = 
-  res.redirect(`/urls`);                    
+  let shortURL = req.params.shortURL;
+  // console.log(shortURL);
+  let longURL = req.body.longURL;
+  console.log(longURL);
+  // console.log(urlDatabase[shortURL]);
+  urlDatabase[shortURL] = longURL;  
+  res.redirect('/urls');                    
 });
 
+//to delete
 app.post(`/urls/:shortURL/delete`, (req, res) => {
   const shortURL = req.params.shortURL
   delete urlDatabase[shortURL];
