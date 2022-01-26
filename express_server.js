@@ -16,7 +16,7 @@ const urlDatabase = {         //to track all the URL's and their shortened forms
 };
 
 app.listen(PORT, () => {
-  console.log(`Example app listening on port ${PORT}!`);
+  console.log(`listening on port ${PORT}!`);
 });
 
 app.get("/", (req, res) => {
