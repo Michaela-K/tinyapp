@@ -67,7 +67,19 @@ app.get("/urls", (req, res) => {
   res.render("urls_index", templateVars); //pass the URL data to our template
 });
 
-app.get("/url/:id", (req, res) => {
+app.get("/urls/new", (req, res) => {
+  if(!req.cookies['user_id']){
+    res.redirect("/login");
+  }else{
+  const user_id = req.cookies['user_id'];
+  const templateVars = {
+    user: users[user_id]
+  };
+  res.render("urls_new", templateVars);
+}
+});
+
+app.get("/urls/:id", (req, res) => {
   //instruction says urls/:id but if we put it as url it conflict with anothter route above - the one in conflict is urls/:id
   const user_id = req.cookies['user_id'];
   const templateVars = {
@@ -103,29 +115,34 @@ app.post(`/urls/:shortURL/delete`, (req, res) => {
   res.redirect("/urls");
 });
 
-app.get("/urls/new", (req, res) => {
-  const user_id = req.cookies['user_id'];
-  const templateVars = {
-    user: users[user_id]
-  };
-  res.render("urls_new", templateVars);
-});
 
 //to login POST
 app.post("/login", (req, res) => {
-  const user_id = req.cookies['user_id'];
-  res.cookie('user_id', `${user_id}`); //res.cookie - To set the values on the cookie. each res.cookie can only set one cookie
+  const email = req.body.email;
+  const password = req.body.password;
+  let user_id = hasUserId(email, users);
+
+  if (!email || !password) {
+    res.status(400).send("Please provide both an email and password");
+  } 
+  if(passwordChk(email, password, users) && user_id){
+    res.cookie('user_id', `${user_id}`);
+  }else{
+    res.status(400).send("Please provide valid email and/or password");
+  }
+  
+  // res.cookie('user_id', `${user_id}`); //res.cookie - To set the values on the cookie. each res.cookie can only set one cookie
   res.redirect("/urls");
 });
 
 
 //Login GET
 app.get("/login", (req, res) => {
-  const user_id = req.cookies['user_id'];
+  const user_id = req.body['user_id'];  //this grabs the user id cookie vs const user_id = req.cookies['user_id'] which assigns it
   const templateVars = {
     user: users[user_id]
   };
-  res.render("login", templateVars);
+  res.render("urls_login", templateVars);
 });
 
 //logout
@@ -139,26 +156,27 @@ app.get("/register", (req, res) => {
   const templateVars = {
     user: users[user_id]
   };
+  // console.log(findUserId("me@gmail.com", users));
   res.render("urls_register", templateVars);
 });
 
 app.post('/register', (req, res, next) => {
-  const user_id = generateRandomString();
   const email = req.body.email;
   const password = req.body.password;
-  users[user_id] = {id: user_id, email: email, password: password};
-  res.cookie('user_id', `${user_id}`);
+  const user_id = generateRandomString();
+  // users[user_id] = {id: user_id, email: email, password: password};
 
   if (!email || !password) {
-      res.status(400).send("Please provide both an email and password");
+      res.status(403).send("Please provide both an email and password");
     } else if (hasEmail(email, users)){
-      res.status(400).send("An account already exists for this email address");
+      res.status(403).send("An account already exists for this email address");
     }else{
       users[user_id] = {id: user_id, email: email, password: password};
+      res.cookie('user_id', `${user_id}`);
     }
-  console.log(user_id);       //works - random string
-  console.log(users[user_id].email);  //works - email
-  console.log(users[user_id]);  //works - obj
+  // console.log(user_id);       //works - random string
+  // console.log(users[user_id].email);  //works - email
+  // console.log(users[user_id]);  //works - obj
   res.redirect("/urls");
 });
 
@@ -185,14 +203,36 @@ const users = {
 };
 
 function hasEmail(email, users){
-  for (const user in users) {
-  if(user.email === email){
+  for (const user in users) {    //user is a string  - for const user of Obj.values........user.email
+    console.log(user);
+    // console.log();
+  if(users[user].email === email){
     return true;
   }
   }
   return false;
 };
 hasEmail();
+
+function hasUserId(email, users){
+  for (const user in users) {  
+  if(users[user].email === email){
+    return users[user].id;
+  }
+  }
+  return false;
+};
+hasUserId();
+
+function passwordChk(email,password, users){
+  for (const user in users) {  
+  if(users[user].email === email  && users[user].password === password){
+    return true;
+  }
+  }
+  return false;
+};
+passwordChk();
 
 
 function generateRandomString() {
