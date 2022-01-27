@@ -19,26 +19,6 @@ app.use(
 
 app.set("view engine", "ejs");
 
-const urlDatabase = {
-  //to track all the URL's and their shortened forms
-  b2xVn2: "http://www.lighthouselabs.ca", //key is the ID
-  "9sm5xK": "http://www.google.com",
-};
-
-
-const users = {
-  xyz123: {
-    id: "xyz123",
-    email: "don@gmail.com",
-    password: "doyou",
-  },
-  lmn456: {
-    id: "lmn456",
-    email: "william@gmail.com",
-    password: "willyou",
-  },
-};
-
 app.listen(PORT, () => {
   console.log(`listening on port ${PORT}!`);
 });
@@ -71,10 +51,10 @@ app.get("/urls.json", (req, res) => {
 
 //Create short URL and enter Long URL
 app.post("/urls", (req, res) => {
-  const shortURL = generateRandomString(); //?????LINE 6 "url shortening part2"
+  const shortURL = generateRandomString(); 
   urlDatabase[shortURL] = req.body.longURL; // the data in the input field will be avaialbe to us in the req.body.longURL variable, which we can store in our urlDatabase object. // Log the POST request body to the console
   console.log("urlDatabase", urlDatabase);
-  res.redirect(`/urls`); //?????????
+  res.redirect(`/urls`); 
 });
 
 app.get("/urls", (req, res) => {
@@ -133,9 +113,19 @@ app.get("/urls/new", (req, res) => {
 
 //to login POST
 app.post("/login", (req, res) => {
-  let username = req.body.username; //use setCookie here instead?
-  res.cookie("username", `${username}`); //res.cookie - To set the values on the cookie. each res.cookie can only set one cookie
+  const user_id = req.cookies['user_id'];
+  res.cookie('user_id', `${user_id}`); //res.cookie - To set the values on the cookie. each res.cookie can only set one cookie
   res.redirect("/urls");
+});
+
+
+//Login GET
+app.get("/login", (req, res) => {
+  const user_id = req.cookies['user_id'];
+  const templateVars = {
+    user: users[user_id]
+  };
+  res.render("login", templateVars);
 });
 
 //logout
@@ -163,16 +153,36 @@ app.post('/register', (req, res, next) => {
       res.status(400).send("Please provide both an email and password");
     } else if (hasEmail(email, users)){
       res.status(400).send("An account already exists for this email address");
+    }else{
+      users[user_id] = {id: user_id, email: email, password: password};
     }
-
+  console.log(user_id);       //works - random string
+  console.log(users[user_id].email);  //works - email
+  console.log(users[user_id]);  //works - obj
   res.redirect("/urls");
 });
-    // if (cookie === undefined) {
-    //   res.cookie('username', `${user_id}`);
-    //   console.log('cookie created successfully');
-    // } else { 
-    //   console.log('cookie exists');
-    // } 
+
+
+
+const urlDatabase = {
+  //to track all the URL's and their shortened forms
+  b2xVn2: "http://www.lighthouselabs.ca", //key is the ID
+  "9sm5xK": "http://www.google.com",
+};
+
+
+const users = {
+  xyz123: {
+    id: "xyz123",
+    email: "me@gmail.com",
+    password: "123",
+  },
+  lmn456: {
+    id: "lmn456",
+    email: "you@gmail.com",
+    password: "123",
+  },
+};
 
 function hasEmail(email, users){
   for (const user in users) {
