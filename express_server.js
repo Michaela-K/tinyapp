@@ -32,58 +32,48 @@ app.get("/urls.json", (req, res) => {
   res.json(urlDatabase);
 });
 
-//to present the form to the user
-// app.get("/urls/new", (req, res) => {
-//   username: req.cookies["username"],
-//   res.render("urls_new");
-// });
-
-//store new shortURL
-// app.get("/urls/:shortURL", (req, res) => {  //The : in front of shortURL indicates that shortURL is a route parameter. This means that the value in this part of the url will be available in the req.params object.
-//   // const longURL = urlDatabase[req.params.shortURL]
-//   let templateVars = {
-//     username: req.cookies['username'],
-//     shortURL: req.params.shortURL,
-//     longURL: urlDatabase[req.params.shortURL]
-//   };
-//   res.render("urls_show", templateVars);
-// });
-
 //Create short URL and enter Long URL
 app.post("/urls", (req, res) => {
   const shortURL = generateRandomString(); 
-  urlDatabase[shortURL] = req.body.longURL; // the data in the input field will be avaialbe to us in the req.body.longURL variable, which we can store in our urlDatabase object. // Log the POST request body to the console
-  console.log("urlDatabase", urlDatabase);
+  // urlDatabase[shortURL] = req.body.longURL; // the data in the input field will be avaialbe to us in the req.body.longURL variable, which we can store in our urlDatabase object. // Log the POST request body to the console
+  let longURL = req.body.longURL;
+  const user_id = req.cookies['user_id'];
+  urlDatabase[shortURL] = { longURL: longURL, userID: user_id}
+  // console.log("user_id", user_id);
   res.redirect(`/urls`); 
 });
 
 app.get("/urls", (req, res) => {
-  const user_id = req.cookies['user_id'];   //fetching user id from cookie
+  const user_id = req.cookies.user_id;   //fetching user id from cookie
   //JSON string representing the entire urlDatabase object
+
+  let urls = urlsForUser(user_id, urlDatabase);
   const templateVars = {
-    urls: urlDatabase,
+    urls: urls,
     user: users[user_id]
   };
   res.render("urls_index", templateVars); //pass the URL data to our template
+  console.log(urlDatabase);
 });
 
+
 app.get("/urls/new", (req, res) => {
-  if(!req.cookies['user_id']){
-    res.redirect("/login");
-  }else{
-  const user_id = req.cookies['user_id'];
+  // if(!req.cookies['user_id']){
+  //   res.redirect("/login");
+  // }
+  const user_id = req.cookies.user_id;
+  console.log("user_id new: ", user_id);
   const templateVars = {
     user: users[user_id]
   };
   res.render("urls_new", templateVars);
-}
 });
 
 app.get("/urls/:id", (req, res) => {
   //instruction says urls/:id but if we put it as url it conflict with anothter route above - the one in conflict is urls/:id
   const user_id = req.cookies['user_id'];
   const templateVars = {
-    longURL: urlDatabase[req.params.id],
+    longURL: urlDatabase[req.params.id].longURL,
     shortURL: req.params.id,
     user: users[user_id]
   };
@@ -92,9 +82,8 @@ app.get("/urls/:id", (req, res) => {
 
 //to see new URL
 app.get("/u/:shortURL", (req, res) => {
-  //?????is this ok if we have the one above?
   const longURL = urlDatabase[req.params.shortURL]; //redirect short URL section of "url shortening part2"
-  res.redirect(longURL);
+  res.redirect(longURL.longURL);
 });
 
 //to update
@@ -104,7 +93,7 @@ app.post(`/urls/:shortURL/update`, (req, res) => {
   let longURL = req.body.longURL;
   console.log(longURL);
   // console.log(urlDatabase[shortURL]);
-  urlDatabase[shortURL] = longURL;
+  urlDatabase[shortURL].longURL = longURL;
   res.redirect("/urls");
 });
 
@@ -126,7 +115,7 @@ app.post("/login", (req, res) => {
     res.status(400).send("Please provide both an email and password");
   } 
   if(passwordChk(email, password, users) && user_id){
-    res.cookie('user_id', `${user_id}`);
+    res.cookie('user_id', user_id);
   }else{
     res.status(400).send("Please provide valid email and/or password");
   }
@@ -160,7 +149,7 @@ app.get("/register", (req, res) => {
   res.render("urls_register", templateVars);
 });
 
-app.post('/register', (req, res, next) => {
+app.post('/register', (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
   const user_id = generateRandomString();
@@ -172,7 +161,7 @@ app.post('/register', (req, res, next) => {
       res.status(403).send("An account already exists for this email address");
     }else{
       users[user_id] = {id: user_id, email: email, password: password};
-      res.cookie('user_id', `${user_id}`);
+      res.cookie('user_id', user_id);
     }
   // console.log(user_id);       //works - random string
   // console.log(users[user_id].email);  //works - email
@@ -184,23 +173,42 @@ app.post('/register', (req, res, next) => {
 
 const urlDatabase = {
   //to track all the URL's and their shortened forms
-  b2xVn2: "http://www.lighthouselabs.ca", //key is the ID
-  "9sm5xK": "http://www.google.com",
+  b2xVn2: {
+    longURL: "http://www.lighthouselabs.ca",       //key is the ID
+    userID: "aJ48lW"
+  }, 
+  s9m5xK: {
+    longURL: "http://www.google.com",
+    userID: "cJ48lW"
+  }
 };
 
 
 const users = {
-  xyz123: {
+  "xyz123": {
     id: "xyz123",
     email: "me@gmail.com",
     password: "123",
   },
-  lmn456: {
+  "lmn456": {
     id: "lmn456",
     email: "you@gmail.com",
     password: "123",
   },
 };
+
+function urlsForUser(user_id, urlDatabase){
+  let userUrl = {};
+  for(const url in urlDatabase){
+    // console.log("urlD: ",urlDatabase[url].userID)
+    // console.log("user_id: ", user_id);
+    if(urlDatabase[url].userID === user_id){
+      userUrl[url] = urlDatabase[url].longURL;                         //assigning to new obj
+    }
+  }
+  return userUrl;
+}
+
 
 function hasEmail(email, users){
   for (const user in users) {    //user is a string  - for const user of Obj.values........user.email
