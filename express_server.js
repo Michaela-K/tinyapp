@@ -1,5 +1,7 @@
 // const cookieParser = require("cookie-parser");
+const { getUserByEmail, urlsForUser, hasUserId, passwordChk, generateRandomString} = require("./helpers");
 const cookieSession = require("cookie-session");
+const bcrypt = require('bcryptjs');
 const express = require("express");
 const app = express();
 // app.use(cookieParser());
@@ -67,7 +69,7 @@ app.get("/urls/new", (req, res) => {
 });
 
 app.get("/urls/:id", (req, res) => {
-  if(!req.session.user_id){                  //not working??
+  if(!req.session.user_id){                  
     res.redirect("/login");
   }
   const user_id = req.session.user_id;
@@ -176,15 +178,16 @@ app.post('/register', (req, res) => {
 
   if (!email || !password) {
       res.status(403).send("Please provide both an email and password");
-    } else if (hasEmail(email, users)){
-      res.status(403).send("An account already exists for this email address");
+    } else if (getUserByEmail(email, users)){
+      res.status(403).send("An account already exists for this email address")
+      //Please <a href="/login"> Login </a>")
     }else{
-      users[user_id] = {id: user_id, email: email, password: password};
+      users[user_id] = {id: user_id, email: email, password: bcrypt.hashSync(password, 10)};
       req.session.user_id = user_id;
     }
   // console.log(user_id);       //works - random string
   // console.log(users[user_id].email);  //works - email
-  // console.log(users[user_id]);  //works - obj
+  console.log(users[user_id]);  //works - obj
   res.redirect("/urls");
 });
 
@@ -215,62 +218,3 @@ const users = {
     password: "123",
   },
 };
-
-function urlsForUser(user_id, urlDatabase){
-  let userUrl = {};
-  for(const url in urlDatabase){
-    console.log("fn urlsForUser urlD: ",urlDatabase[url].userID)
-    console.log("fn urlsForUser user_id: ", user_id);
-    if(urlDatabase[url].userID === user_id){
-      userUrl[url] = urlDatabase[url].longURL;                         //assigning to new obj
-    }
-  }
-  return userUrl;
-}
-
-
-function hasEmail(email, users){
-  for (const user in users) {    //user is a string  - for const user of Obj.values........user.email
-    console.log(user);
-    // console.log();
-  if(users[user].email === email){
-    return true;
-  }
-  }
-  return false;
-};
-hasEmail();
-
-function hasUserId(email, users){
-  for (const user in users) {  
-  if(users[user].email === email){
-    return users[user].id;
-  }
-  }
-  return false;
-};
-hasUserId();
-
-function passwordChk(email,password, users){
-  for (const user in users) {  
-  if(users[user].email === email  && users[user].password === password){
-    return true;
-  }
-  }
-  return false;
-};
-passwordChk();
-
-
-function generateRandomString() {
-  let length = 6;
-  let result = "";
-  let characters =
-    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-  let charactersLength = characters.length;
-  for (let i = 0; i < length; i++) {
-    result += characters.charAt(Math.floor(Math.random() * charactersLength));
-  }
-  return result;
-}
-generateRandomString();
