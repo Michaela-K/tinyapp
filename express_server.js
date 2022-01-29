@@ -58,11 +58,11 @@ app.get("/urls", (req, res) => {
 
 
 app.get("/urls/new", (req, res) => {
-  // if(!req.cookies['user_id']){
-  //   res.redirect("/login");
-  // }
+  if(!req.cookies.user_id){                  //not working??
+    res.redirect("/login");
+  }
   const user_id = req.cookies.user_id;
-  console.log("user_id new: ", user_id);
+  // console.log("user_id new: ", user_id);
   const templateVars = {
     user: users[user_id]
   };
@@ -70,8 +70,10 @@ app.get("/urls/new", (req, res) => {
 });
 
 app.get("/urls/:id", (req, res) => {
-  //instruction says urls/:id but if we put it as url it conflict with anothter route above - the one in conflict is urls/:id
-  const user_id = req.cookies['user_id'];
+  if(!req.cookies.user_id){                  //not working??
+    res.redirect("/login");
+  }
+  const user_id = req.cookies.user_id;
   const templateVars = {
     longURL: urlDatabase[req.params.id].longURL,
     shortURL: req.params.id,
@@ -89,19 +91,39 @@ app.get("/u/:shortURL", (req, res) => {
 //to update
 app.post(`/urls/:shortURL/update`, (req, res) => {
   let shortURL = req.params.shortURL;
-  // console.log(shortURL);
+  // console.log("update shortURL: ",shortURL);
   let longURL = req.body.longURL;
-  console.log(longURL);
-  // console.log(urlDatabase[shortURL]);
+  // console.log("update longURL: ",longURL);
+  // console.log("update urlD-shortURL: ",urlDatabase[shortURL]);
+  const user_id = req.cookies.user_id;
+  const userID = user_id;                  
+  // console.log("del - userID : ", userID);
+  const userUrls = urlsForUser(userID, urlDatabase);
+  // console.log("del - userUrls : ", userUrls);
+  if (Object.keys(userUrls).includes(req.params.shortURL)) {
+  const shortURL = req.params.shortURL;
   urlDatabase[shortURL].longURL = longURL;
+  res.redirect("/urls");
+  }else {
+    res.status(401).send("Unauthorized: Update");
+  }
   res.redirect("/urls");
 });
 
-//to delete
+//to delete                    //when its created, I see the user_id and UrlD, disappears when click delete 
 app.post(`/urls/:shortURL/delete`, (req, res) => {
+  const user_id = req.cookies.user_id;
+  const userID = user_id;                  
+  // console.log("del - userID : ", userID);
+  const userUrls = urlsForUser(userID, urlDatabase);
+  // console.log("del - userUrls : ", userUrls);
+  if (Object.keys(userUrls).includes(req.params.shortURL)) {
   const shortURL = req.params.shortURL;
   delete urlDatabase[shortURL];
   res.redirect("/urls");
+  }else {
+    res.status(401).send("Unauthorized: Delete");
+  }
 });
 
 
@@ -177,10 +199,10 @@ const urlDatabase = {
     longURL: "http://www.lighthouselabs.ca",       //key is the ID
     userID: "aJ48lW"
   }, 
-  s9m5xK: {
-    longURL: "http://www.google.com",
-    userID: "cJ48lW"
-  }
+  // s9m5xK: {
+  //   longURL: "http://www.google.com",
+  //   userID: "cJ48lW"
+  // }
 };
 
 
@@ -200,8 +222,8 @@ const users = {
 function urlsForUser(user_id, urlDatabase){
   let userUrl = {};
   for(const url in urlDatabase){
-    // console.log("urlD: ",urlDatabase[url].userID)
-    // console.log("user_id: ", user_id);
+    console.log("fn urlsForUser urlD: ",urlDatabase[url].userID)
+    console.log("fn urlsForUser user_id: ", user_id);
     if(urlDatabase[url].userID === user_id){
       userUrl[url] = urlDatabase[url].longURL;                         //assigning to new obj
     }
