@@ -2,8 +2,6 @@ const bcrypt = require("bcryptjs");
 
 function getUserByEmail(email, users) {
   for (const user in users) {
-    //user is a string  - for const user of Obj.values........user.email
-    // console.log(user);
     if (users[user].email === email) {
       return true;
     }
@@ -17,7 +15,7 @@ function urlsForUser(user_id, urlDatabase) {
     console.log("fn urlsForUser urlD: ", urlDatabase[url].userID);
     console.log("fn urlsForUser user_id: ", user_id);
     if (urlDatabase[url].userID === user_id) {
-      userUrl[url] = urlDatabase[url].longURL; //assigning to new obj
+      userUrl[url] = urlDatabase[url].longURL;
     }
   }
   return userUrl;
@@ -39,7 +37,6 @@ function passwordChk(email, password, users) {
       users[user].email === email &&
       bcrypt.compareSync(password, users[user].password)
     ) {
-      //bcrypt.compareSync(req.body.password, users[user].password)
       return true;
     }
   }
