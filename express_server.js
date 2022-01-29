@@ -1,8 +1,8 @@
-const express = require("express");
-const cookieParser = require("cookie-parser");
+// const cookieParser = require("cookie-parser");
 const cookieSession = require("cookie-session");
+const express = require("express");
 const app = express();
-app.use(cookieParser());
+// app.use(cookieParser());
 const PORT = 8000; // default port 8080
 
 const bodyParser = require("body-parser"); //convert the request body from a Buffer into string that we can read
@@ -11,9 +11,9 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(
   cookieSession({
     name: "session",
-    keys: ["ENTER"],
+    keys: ['key1', 'key2'],
 
-    maxAge: 24 * 60 * 60 * 1000,
+    maxAge: 24 * 60 * 60 * 1000,  //number representing the milliseconds from Date.now() for expiry
   })
 );
 
@@ -21,10 +21,6 @@ app.set("view engine", "ejs");
 
 app.listen(PORT, () => {
   console.log(`listening on port ${PORT}!`);
-});
-
-app.get("/", (req, res) => {
-  res.send("Homepage!");
 });
 
 //JSON string representing the entire urlDatabase object
@@ -37,31 +33,32 @@ app.post("/urls", (req, res) => {
   const shortURL = generateRandomString(); 
   // urlDatabase[shortURL] = req.body.longURL; // the data in the input field will be avaialbe to us in the req.body.longURL variable, which we can store in our urlDatabase object. // Log the POST request body to the console
   let longURL = req.body.longURL;
-  const user_id = req.cookies['user_id'];
+  const user_id = req.session['user_id'];
   urlDatabase[shortURL] = { longURL: longURL, userID: user_id}
   // console.log("user_id", user_id);
   res.redirect(`/urls`); 
 });
 
 app.get("/urls", (req, res) => {
-  const user_id = req.cookies.user_id;   //fetching user id from cookie
+  const user_id = req.session.user_id;   //fetching user id from cookie
   //JSON string representing the entire urlDatabase object
-
   let urls = urlsForUser(user_id, urlDatabase);
+  console.log("/urls get user_id: ",user_id);
+  console.log("/urls get urlDatabase: ",urlDatabase);
   const templateVars = {
     urls: urls,
     user: users[user_id]
   };
   res.render("urls_index", templateVars); //pass the URL data to our template
-  console.log(urlDatabase);
+  // console.log(urlDatabase);
 });
 
 
 app.get("/urls/new", (req, res) => {
-  if(!req.cookies.user_id){                  //not working??
+  if(!req.session.user_id){                  //not working??
     res.redirect("/login");
   }
-  const user_id = req.cookies.user_id;
+  const user_id = req.session.user_id;
   // console.log("user_id new: ", user_id);
   const templateVars = {
     user: users[user_id]
@@ -70,10 +67,10 @@ app.get("/urls/new", (req, res) => {
 });
 
 app.get("/urls/:id", (req, res) => {
-  if(!req.cookies.user_id){                  //not working??
+  if(!req.session.user_id){                  //not working??
     res.redirect("/login");
   }
-  const user_id = req.cookies.user_id;
+  const user_id = req.session.user_id;
   const templateVars = {
     longURL: urlDatabase[req.params.id].longURL,
     shortURL: req.params.id,
@@ -95,7 +92,7 @@ app.post(`/urls/:shortURL/update`, (req, res) => {
   let longURL = req.body.longURL;
   // console.log("update longURL: ",longURL);
   // console.log("update urlD-shortURL: ",urlDatabase[shortURL]);
-  const user_id = req.cookies.user_id;
+  const user_id = req.session.user_id;
   const userID = user_id;                  
   // console.log("del - userID : ", userID);
   const userUrls = urlsForUser(userID, urlDatabase);
@@ -112,7 +109,7 @@ app.post(`/urls/:shortURL/update`, (req, res) => {
 
 //to delete                    //when its created, I see the user_id and UrlD, disappears when click delete 
 app.post(`/urls/:shortURL/delete`, (req, res) => {
-  const user_id = req.cookies.user_id;
+  const user_id = req.session.user_id;
   const userID = user_id;                  
   // console.log("del - userID : ", userID);
   const userUrls = urlsForUser(userID, urlDatabase);
@@ -137,7 +134,7 @@ app.post("/login", (req, res) => {
     res.status(400).send("Please provide both an email and password");
   } 
   if(passwordChk(email, password, users) && user_id){
-    res.cookie('user_id', user_id);
+    req.session.user_id = user_id;
   }else{
     res.status(400).send("Please provide valid email and/or password");
   }
@@ -158,12 +155,12 @@ app.get("/login", (req, res) => {
 
 //logout
 app.post("/logout", (req, res) => {
-  res.clearCookie("user_id");
+  req.session = null;
   res.redirect("/urls");
 });
 
 app.get("/register", (req, res) => {
-  const user_id = req.cookies['user_id'];
+  const user_id = req.session['user_id'];
   const templateVars = {
     user: users[user_id]
   };
@@ -183,7 +180,7 @@ app.post('/register', (req, res) => {
       res.status(403).send("An account already exists for this email address");
     }else{
       users[user_id] = {id: user_id, email: email, password: password};
-      res.cookie('user_id', user_id);
+      req.session.user_id = user_id;
     }
   // console.log(user_id);       //works - random string
   // console.log(users[user_id].email);  //works - email
