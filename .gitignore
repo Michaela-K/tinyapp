@@ -1,7 +1,1 @@
 node_modules
-
-# Type git status into your terminal and press enter.
-# As we can see, git is currently tracking our node_modules folder, 
-# which just added a whole bunch of files after we installed Express. 
-# We don't need to track these files in our git repo because we specify Express as a dependency 
-# in our package.json. Lets ignore the node_modules folder:

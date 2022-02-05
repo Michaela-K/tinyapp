@@ -12,8 +12,6 @@ function getUserByEmail(email, users) {
 function urlsForUser(user_id, urlDatabase) {
   let userUrl = {};
   for (const url in urlDatabase) {
-    console.log("fn urlsForUser urlD: ", urlDatabase[url].userID);
-    console.log("fn urlsForUser user_id: ", user_id);
     if (urlDatabase[url].userID === user_id) {
       userUrl[url] = urlDatabase[url].longURL;
     }
